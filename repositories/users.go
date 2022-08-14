@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"be-waybucks/models"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -15,44 +14,43 @@ type UserRepository interface {
 	DeleteUser(user models.User, ID int) (models.User, error)
 }
 
-type repository struct {
-	db *gorm.DB
-}
-
 func RepositoryUser(db *gorm.DB) *repository {
 	return &repository{db}
 }
 
+// query get all data well be called in routes
 func (r *repository) FindUsers() ([]models.User, error) {
 	var users []models.User
-	err := r.db.Raw("SELECT * FROM users").Scan(&users).Error
+	err := r.db.Preload("Profile").Preload("Product").Find(&users).Error // add this code
 
 	return users, err
 }
 
 func (r *repository) GetUser(ID int) (models.User, error) {
 	var user models.User
-	err := r.db.Raw("SELECT * FROM users WHERE id=?", ID).Scan(&user).Error
+	err := r.db.Preload("Profile").Preload("Product").First(&user, ID).Error
 
 	return user, err
 }
 
+// query create new user well be used in handler create user
 func (r *repository) CreateUser(user models.User) (models.User, error) {
-	err := r.db.Exec("INSERT INTO users(name,email,password,created_at,updated_at) VALUES (?,?,?,?,?)", user.Name, user.Email, user.Password, time.Now(), time.Now()).Error
+	err := r.db.Create(&user).Error
 
 	return user, err
 }
 
 // query update well be called in routes
 func (r *repository) UpdateUser(user models.User, ID int) (models.User, error) {
-	err := r.db.Raw("UPDATE users SET name=?, email=?, password=? WHERE id=?", user.Name, user.Email, user.Password, ID).Scan(&user).Error
+	err := r.db.Save(&user).Error
+	// err := r.db.Raw("UPDATE users SET name=?, email=?, password=? WHERE id=?", user.Name, user.Email, user.Password, ID).Scan(&user).Error
 
 	return user, err
 }
 
 // query delete well be called in routes
 func (r *repository) DeleteUser(user models.User, ID int) (models.User, error) {
-	err := r.db.Raw("DELETE FROM users WHERE id=?", ID).Scan(&user).Error
+	err := r.db.Delete(&user).Error
 
 	return user, err
 }
