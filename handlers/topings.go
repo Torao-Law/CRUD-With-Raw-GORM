@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	productdto "be-waybucks/dto/product"
 	dto "be-waybucks/dto/result"
+	topingdto "be-waybucks/dto/toping"
 	"be-waybucks/models"
 	"be-waybucks/repositories"
 	"encoding/json"
@@ -13,18 +13,18 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type handlerProduct struct {
-	ProductRepository repositories.ProductRepository
+type handlerToping struct {
+	TopingRepository repositories.TopingRepository
 }
 
-func HandlerProduct(ProductRepository repositories.ProductRepository) *handlerProduct {
-	return &handlerProduct{ProductRepository}
+func HandlerToping(TopingRepository repositories.TopingRepository) *handlerToping {
+	return &handlerToping{TopingRepository}
 }
 
-func (h *handlerProduct) FindProducts(w http.ResponseWriter, r *http.Request) {
+func (h *handlerToping) FindToping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	products, err := h.ProductRepository.FindProducts()
+	topings, err := h.TopingRepository.FindToping()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -33,17 +33,17 @@ func (h *handlerProduct) FindProducts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: products}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: topings}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerProduct) GetProduct(w http.ResponseWriter, r *http.Request) {
+func (h *handlerToping) GetToping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 
-	var product models.Product
-	product, err := h.ProductRepository.GetProduct(id)
+	var toping models.Toping
+	toping, err := h.TopingRepository.GetToping(id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -52,14 +52,14 @@ func (h *handlerProduct) GetProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseProduct(product)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseToping(toping)}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
+func (h *handlerToping) CreateToping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	request := new(productdto.ProductRequest)
+	request := new(topingdto.TopingRequest)
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -76,16 +76,13 @@ func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product := models.Product{
-		Name:   request.Name,
-		Desc:   request.Desc,
-		Price:  request.Price,
-		Image:  request.Image,
-		Qty:    request.Qty,
-		UserID: request.UserID,
+	toping := models.Toping{
+		Name:  request.Name,
+		Price: request.Price,
+		Image: request.Image,
 	}
 
-	product, err = h.ProductRepository.CreateProduct(product)
+	toping, err = h.TopingRepository.CreateToping(toping)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
@@ -93,19 +90,19 @@ func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product, _ = h.ProductRepository.GetProduct(product.ID)
+	toping, _ = h.TopingRepository.GetToping(toping.ID)
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: product}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: toping}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerProduct) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+func (h *handlerToping) DeleteToping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 
-	product, err := h.ProductRepository.GetProduct(id)
+	toping, err := h.TopingRepository.GetToping(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -113,7 +110,7 @@ func (h *handlerProduct) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := h.ProductRepository.DeleteProduct(product, id)
+	data, err := h.TopingRepository.DeleteToping(toping, id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
@@ -122,18 +119,14 @@ func (h *handlerProduct) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseProduct(data)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseToping(data)}
 	json.NewEncoder(w).Encode(response)
 }
 
-func convertResponseProduct(u models.Product) models.ProductResponse {
-	return models.ProductResponse{
-		Name:   u.Name,
-		Desc:   u.Desc,
-		Price:  u.Price,
-		Image:  u.Image,
-		Qty:    u.Qty,
-		User:   u.User,
-		Toping: u.Toping,
+func convertResponseToping(u models.Toping) models.TopingResponse {
+	return models.TopingResponse{
+		Name:  u.Name,
+		Price: u.Price,
+		Image: u.Image,
 	}
 }
