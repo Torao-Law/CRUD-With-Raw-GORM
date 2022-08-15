@@ -10,7 +10,7 @@ import (
 func RunMigration() {
 	err := mysql.DB.AutoMigrate(
 		&models.User{},
-		&models.Category{},
+		&models.Toping{},
 		&models.Product{},
 		&models.Transaction{},
 		&models.Profile{},

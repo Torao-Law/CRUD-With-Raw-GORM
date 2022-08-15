@@ -102,12 +102,12 @@ func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 func convertResponseProduct(u models.Product) models.ProductResponse {
 	return models.ProductResponse{
-		Name:     u.Name,
-		Desc:     u.Desc,
-		Price:    u.Price,
-		Image:    u.Image,
-		Qty:      u.Qty,
-		User:     u.User,
-		Category: u.Category,
+		Name:   u.Name,
+		Desc:   u.Desc,
+		Price:  u.Price,
+		Image:  u.Image,
+		Qty:    u.Qty,
+		User:   u.User,
+		Toping: u.Toping,
 	}
 }
