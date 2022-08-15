@@ -9,3 +9,11 @@ type ProductRequest struct {
 	UserID   int    `json:"user_id" gorm:"type: int"`
 	TopingID int    `json:"toping_id" form:"toping_id" gorm:"type: int"`
 }
+
+type UpdateProductRequest struct {
+	Name  string `json:"name" form:"name"`
+	Desc  string `json:"desc"  form:"desc"`
+	Price int    `json:"price" form:"price"`
+	Image string `json:"image" form:"image"`
+	Qty   int    `json:"qty" form:"qty"`
+}

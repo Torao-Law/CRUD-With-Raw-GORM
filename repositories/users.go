@@ -21,14 +21,14 @@ func RepositoryUser(db *gorm.DB) *repository {
 // query get all data well be called in routes
 func (r *repository) FindUsers() ([]models.User, error) {
 	var users []models.User
-	err := r.db.Preload("Profile").Preload("Product").Find(&users).Error // add this code
+	err := r.db.Preload("Profile").Preload("Product").Find(&users).Error
 
 	return users, err
 }
 
 func (r *repository) GetUser(ID int) (models.User, error) {
 	var user models.User
-	err := r.db.Preload("Profile").Preload("Product").First(&user, ID).Error
+	err := r.db.Preload("Profile").First(&user, ID).Error
 
 	return user, err
 }
@@ -43,7 +43,6 @@ func (r *repository) CreateUser(user models.User) (models.User, error) {
 // query update well be called in routes
 func (r *repository) UpdateUser(user models.User, ID int) (models.User, error) {
 	err := r.db.Save(&user).Error
-	// err := r.db.Raw("UPDATE users SET name=?, email=?, password=? WHERE id=?", user.Name, user.Email, user.Password, ID).Scan(&user).Error
 
 	return user, err
 }
