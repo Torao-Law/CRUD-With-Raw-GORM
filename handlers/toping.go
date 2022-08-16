@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 )
 
@@ -58,6 +59,8 @@ func (h *handlerToping) GetToping(w http.ResponseWriter, r *http.Request) {
 
 func (h *handlerToping) CreateToping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
+	userId := int(userInfo["id"].(float64))
 
 	request := new(topingdto.TopingRequest)
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -77,9 +80,10 @@ func (h *handlerToping) CreateToping(w http.ResponseWriter, r *http.Request) {
 	}
 
 	toping := models.Toping{
-		Name:  request.Name,
-		Price: request.Price,
-		Image: request.Image,
+		Name:   request.Name,
+		Price:  request.Price,
+		Image:  request.Image,
+		UserID: userId,
 	}
 
 	toping, err = h.TopingRepository.CreateToping(toping)
@@ -125,6 +129,7 @@ func (h *handlerToping) DeleteToping(w http.ResponseWriter, r *http.Request) {
 
 func convertResponseToping(u models.Toping) models.TopingResponse {
 	return models.TopingResponse{
+		ID:    u.ID,
 		Name:  u.Name,
 		Price: u.Price,
 		Image: u.Image,

@@ -106,6 +106,8 @@ func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 func (h *handlerProduct) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
+	userId := int(userInfo["id"].(float64))
 
 	request := new(productdto.UpdateProductRequest)
 	if err := json.NewDecoder(r.Body).Decode(request); err != nil {
@@ -145,7 +147,7 @@ func (h *handlerProduct) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		product.Qty = request.Qty
 	}
 
-	data, err := h.ProductRepository.UpdateProduct(product, id)
+	data, err := h.ProductRepository.UpdateProduct(product, userId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
@@ -161,6 +163,8 @@ func (h *handlerProduct) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 func (h *handlerProduct) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
+	userId := int(userInfo["id"].(float64))
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 
@@ -172,7 +176,7 @@ func (h *handlerProduct) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := h.ProductRepository.DeleteProduct(product, id)
+	data, err := h.ProductRepository.DeleteProduct(product, userId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
@@ -187,6 +191,7 @@ func (h *handlerProduct) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 
 func convertResponseProduct(u models.Product) models.ProductResponse {
 	return models.ProductResponse{
+		ID:     u.ID,
 		Name:   u.Name,
 		Desc:   u.Desc,
 		Price:  u.Price,
