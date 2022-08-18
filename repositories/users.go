@@ -21,7 +21,7 @@ func RepositoryUser(db *gorm.DB) *repository {
 // query get all data well be called in routes
 func (r *repository) FindUsers() ([]models.User, error) {
 	var users []models.User
-	err := r.db.Preload("Profile").Preload("Product").Find(&users).Error
+	err := r.db.Preload("Profile").Find(&users).Error
 
 	return users, err
 }

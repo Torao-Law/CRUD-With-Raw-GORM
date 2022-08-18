@@ -7,13 +7,13 @@ type Toping struct {
 	Price int    `json:"price"`
 }
 
-type TopingResponse struct {
-	ID    int    `json:"id"`
-	Name  string `json:"name"`
-	Price int    `json:"price"`
-	Image string `json:"image"`
-}
+// type TopingResponse struct {
+// 	ID    int    `json:"id"`
+// 	Name  string `json:"name"`
+// 	Price int    `json:"price"`
+// 	Image string `json:"image"`
+// }
 
-func (TopingResponse) TableName() string {
-	return "toping"
-}
+// func (TopingResponse) TableName() string {
+// 	return "toping"
+// }

@@ -24,7 +24,7 @@ func HandlerToping(TopingRepository repositories.TopingRepository) *handlerTopin
 func (h *handlerToping) FindToping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	topings, err := h.TopingRepository.FindToping()
+	toping, err := h.TopingRepository.FindToping()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -33,7 +33,7 @@ func (h *handlerToping) FindToping(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: topings}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: toping}
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -123,8 +123,8 @@ func (h *handlerToping) DeleteToping(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func convertResponseToping(u models.Toping) models.TopingResponse {
-	return models.TopingResponse{
+func convertResponseToping(u models.Toping) models.Toping {
+	return models.Toping{
 		ID:    u.ID,
 		Name:  u.Name,
 		Price: u.Price,

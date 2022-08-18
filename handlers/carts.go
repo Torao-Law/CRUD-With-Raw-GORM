@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	cartdto "be-waybucks/dto/cart"
 	dto "be-waybucks/dto/result"
 	"be-waybucks/models"
 	"be-waybucks/repositories"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 
 	// "github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 )
@@ -56,59 +58,57 @@ func (h *handlerCart) GetCart(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// func (h *handlerCart) CreateCart(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
+func (h *handlerCart) CreateCart(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-// 	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
-// 	userId := int(userInfo["id"].(float64))
+	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
+	userId := int(userInfo["id"].(float64))
 
-// 	request := new(productdto.ProductRequest)
-// 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
-// 		json.NewEncoder(w).Encode(response)
-// 		return
-// 	}
+	request := cartdto.CartRequest{
+		UserID: userId,
+	}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
 
-// 	validation := validator.New()
-// 	err := validation.Struct(request)
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
-// 		json.NewEncoder(w).Encode(response)
-// 		return
-// 	}
+	validation := validator.New()
+	err := validation.Struct(request)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
 
-// 	product := models.Product{
-// 		Name:   request.Name,
-// 		Desc:   request.Desc,
-// 		Price:  request.Price,
-// 		Image:  request.Image,
-// 		Qty:    request.Qty,
-// 		UserID: userId,
-// 	}
+	cart := models.Cart{
+		ID:        request.ID,
+		ProductID: request.ProductID,
+	}
 
-// 	product, err = h.ProductRepository.CreateProduct(product)
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
-// 		json.NewEncoder(w).Encode(response)
-// 		return
-// 	}
+	cart, err = h.CartRepository.CreateCart(cart)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
 
-// 	product, _ = h.ProductRepository.GetProduct(product.ID)
+	cart, _ = h.CartRepository.GetCart(cart.ID)
 
-// 	w.WriteHeader(http.StatusOK)
-// 	response := dto.SuccessResult{Code: http.StatusOK, Data: product}
-// 	json.NewEncoder(w).Encode(response)
-// }
+	w.WriteHeader(http.StatusOK)
+	response := dto.SuccessResult{Code: http.StatusOK, Data: cart}
+	json.NewEncoder(w).Encode(response)
+}
 
 func (h *handlerCart) DeleteCart(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
 	userId := int(userInfo["id"].(float64))
 
-	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+	id, _ := strconv.Atoi(mux.Vars(r)["userId"])
 
 	cart, err := h.CartRepository.GetCart(id)
 	if err != nil {
@@ -127,17 +127,16 @@ func (h *handlerCart) DeleteCart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseProduct(data)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseCart(data)}
 	json.NewEncoder(w).Encode(response)
 }
 
-func convertResponseProduct(u models.Product) models.ProductResponse {
-	return models.ProductResponse{
-		ID:    u.ID,
-		Name:  u.Name,
-		Desc:  u.Desc,
-		Price: u.Price,
-		Image: u.Image,
-		Qty:   u.Qty,
+func convertResponseCart(u models.Cart) models.CartResponse {
+	return models.CartResponse{
+		ID:        u.ID,
+		ProductID: u.ProductID,
+		ToppingID: u.TopingID,
+		Product:   u.Product,
+		SubAmount: u.SubAmount,
 	}
 }

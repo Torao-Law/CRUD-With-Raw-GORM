@@ -85,7 +85,6 @@ func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		Desc:   request.Desc,
 		Price:  request.Price,
 		Image:  request.Image,
-		Qty:    request.Qty,
 		UserID: userId,
 	}
 
@@ -143,9 +142,9 @@ func (h *handlerProduct) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		product.Image = request.Image
 	}
 
-	if request.Qty != 0 {
-		product.Qty = request.Qty
-	}
+	// if request.Qty != 0 {
+	// 	product.Qty = request.Qty
+	// }
 
 	data, err := h.ProductRepository.UpdateProduct(product, userId)
 	if err != nil {
