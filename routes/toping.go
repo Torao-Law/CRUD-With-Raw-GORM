@@ -2,6 +2,7 @@ package routes
 
 import (
 	"be-waybucks/handlers"
+	"be-waybucks/pkg/middleware"
 	"be-waybucks/pkg/mysql"
 	"be-waybucks/repositories"
 
@@ -14,6 +15,6 @@ func TopingRoutes(r *mux.Router) {
 
 	r.HandleFunc("/topings", h.FindToping).Methods("GET")
 	r.HandleFunc("/toping/{id}", h.GetToping).Methods("GET")
-	r.HandleFunc("/toping", h.CreateToping).Methods("POST")
-	r.HandleFunc("/toping/{id}", h.DeleteToping).Methods("DELETE")
+	r.HandleFunc("/toping", middleware.Auth(h.CreateToping)).Methods("POST")
+	r.HandleFunc("/toping/{id}", middleware.Auth(h.DeleteToping)).Methods("DELETE")
 }

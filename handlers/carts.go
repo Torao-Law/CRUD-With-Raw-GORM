@@ -1,30 +1,32 @@
 package handlers
 
 import (
+	cartdto "be-waybucks/dto/cart"
 	dto "be-waybucks/dto/result"
-	topingdto "be-waybucks/dto/toping"
 	"be-waybucks/models"
 	"be-waybucks/repositories"
 	"encoding/json"
 	"net/http"
 	"strconv"
 
+	// "github.com/go-playground/validator/v10"
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 )
 
-type handlerToping struct {
-	TopingRepository repositories.TopingRepository
+type handlerCart struct {
+	CartRepository repositories.CartRepository
 }
 
-func HandlerToping(TopingRepository repositories.TopingRepository) *handlerToping {
-	return &handlerToping{TopingRepository}
+func HandlerCart(CartRepository repositories.CartRepository) *handlerCart {
+	return &handlerCart{CartRepository}
 }
 
-func (h *handlerToping) FindToping(w http.ResponseWriter, r *http.Request) {
+func (h *handlerCart) FindCart(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	toping, err := h.TopingRepository.FindToping()
+	carts, err := h.CartRepository.FindCarts()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -33,17 +35,17 @@ func (h *handlerToping) FindToping(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: toping}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: carts}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerToping) GetToping(w http.ResponseWriter, r *http.Request) {
+func (h *handlerCart) GetCart(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 
-	var toping models.Toping
-	toping, err := h.TopingRepository.GetToping(id)
+	var cart models.Cart
+	cart, err := h.CartRepository.GetCart(id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -52,14 +54,19 @@ func (h *handlerToping) GetToping(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseToping(toping)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: cart}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerToping) CreateToping(w http.ResponseWriter, r *http.Request) {
+func (h *handlerCart) CreateCart(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	request := new(topingdto.TopingRequest)
+	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
+	userId := int(userInfo["id"].(float64))
+
+	request := cartdto.CartRequest{
+		UserID: userId,
+	}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -76,13 +83,12 @@ func (h *handlerToping) CreateToping(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	toping := models.Toping{
-		Name:  request.Name,
-		Price: request.Price,
-		Image: request.Image,
+	cart := models.Cart{
+		ID:        request.ID,
+		ProductID: request.ProductID,
 	}
 
-	toping, err = h.TopingRepository.CreateToping(toping)
+	cart, err = h.CartRepository.CreateCart(cart)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
@@ -90,19 +96,21 @@ func (h *handlerToping) CreateToping(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	toping, _ = h.TopingRepository.GetToping(toping.ID)
+	cart, _ = h.CartRepository.GetCart(cart.ID)
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: toping}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: cart}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerToping) DeleteToping(w http.ResponseWriter, r *http.Request) {
+func (h *handlerCart) DeleteCart(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
+	userId := int(userInfo["id"].(float64))
 
-	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+	id, _ := strconv.Atoi(mux.Vars(r)["userId"])
 
-	toping, err := h.TopingRepository.GetToping(id)
+	cart, err := h.CartRepository.GetCart(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -110,7 +118,7 @@ func (h *handlerToping) DeleteToping(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := h.TopingRepository.DeleteToping(toping, id)
+	data, err := h.CartRepository.DeleteCart(cart, userId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
@@ -119,15 +127,16 @@ func (h *handlerToping) DeleteToping(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseToping(data)}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseCart(data)}
 	json.NewEncoder(w).Encode(response)
 }
 
-func convertResponseToping(u models.Toping) models.Toping {
-	return models.Toping{
-		ID:    u.ID,
-		Name:  u.Name,
-		Price: u.Price,
-		Image: u.Image,
+func convertResponseCart(u models.Cart) models.CartResponse {
+	return models.CartResponse{
+		ID:        u.ID,
+		ProductID: u.ProductID,
+		ToppingID: u.TopingID,
+		Product:   u.Product,
+		SubAmount: u.SubAmount,
 	}
 }
