@@ -191,13 +191,11 @@ func (h *handlerProduct) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 
 func convertResponseProduct(u models.Product) models.ProductResponse {
 	return models.ProductResponse{
-		ID:     u.ID,
-		Name:   u.Name,
-		Desc:   u.Desc,
-		Price:  u.Price,
-		Image:  u.Image,
-		Qty:    u.Qty,
-		User:   u.User,
-		Toping: u.Toping,
+		ID:    u.ID,
+		Name:  u.Name,
+		Desc:  u.Desc,
+		Price: u.Price,
+		Image: u.Image,
+		Qty:   u.Qty,
 	}
 }
