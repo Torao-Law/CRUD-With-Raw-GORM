@@ -9,7 +9,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-playground/validator/v10"
+	// "github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 )
 
@@ -24,7 +25,7 @@ func HandlerToping(TopingRepository repositories.TopingRepository) *handlerTopin
 func (h *handlerToping) FindToping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	toping, err := h.TopingRepository.FindToping()
+	topings, err := h.TopingRepository.FindToping()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -32,8 +33,12 @@ func (h *handlerToping) FindToping(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i, p := range topings {
+		topings[i].Image = path_file + p.Image
+	}
+
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: toping}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: topings}
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -44,6 +49,8 @@ func (h *handlerToping) GetToping(w http.ResponseWriter, r *http.Request) {
 
 	var toping models.Toping
 	toping, err := h.TopingRepository.GetToping(id)
+	toping.Image = path_file + toping.Image
+
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -58,31 +65,26 @@ func (h *handlerToping) GetToping(w http.ResponseWriter, r *http.Request) {
 
 func (h *handlerToping) CreateToping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
+	userId := int(userInfo["id"].(float64))
 
-	request := new(topingdto.TopingRequest)
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
-		json.NewEncoder(w).Encode(response)
-		return
-	}
+	dataContex := r.Context().Value("dataFile")
+	filename := dataContex.(string)
+	price, _ := strconv.Atoi(r.FormValue("price"))
 
-	validation := validator.New()
-	err := validation.Struct(request)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
-		json.NewEncoder(w).Encode(response)
-		return
+	request := topingdto.TopingRequest{
+		Name:   r.FormValue("name"),
+		Price:  price,
+		UserID: userId,
 	}
 
 	toping := models.Toping{
 		Name:  request.Name,
 		Price: request.Price,
-		Image: request.Image,
+		Image: filename,
 	}
 
-	toping, err = h.TopingRepository.CreateToping(toping)
+	toping, err := h.TopingRepository.CreateToping(toping)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
@@ -90,15 +92,15 @@ func (h *handlerToping) CreateToping(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	toping, _ = h.TopingRepository.GetToping(toping.ID)
-
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: toping}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponseToping(toping)}
 	json.NewEncoder(w).Encode(response)
 }
 
 func (h *handlerToping) DeleteToping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
+	userId := int(userInfo["id"].(float64))
 
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 
@@ -110,7 +112,7 @@ func (h *handlerToping) DeleteToping(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := h.TopingRepository.DeleteToping(toping, id)
+	data, err := h.TopingRepository.DeleteToping(toping, userId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}

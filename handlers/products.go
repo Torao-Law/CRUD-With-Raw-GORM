@@ -6,6 +6,7 @@ import (
 	"be-waybucks/models"
 	"be-waybucks/repositories"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -71,8 +72,8 @@ func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
 	userId := int(userInfo["id"].(float64))
 
-	dataContex := r.Context().Value("dataFile") // add this code
-	filename := dataContex.(string)             // add this code
+	dataContex := r.Context().Value("dataFile")
+	filename := dataContex.(string) // add this code
 
 	price, _ := strconv.Atoi(r.FormValue("price"))
 	qty, _ := strconv.Atoi(r.FormValue("qty"))
@@ -120,48 +121,44 @@ func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 func (h *handlerProduct) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
-	userId := int(userInfo["id"].(float64))
-
-	request := new(productdto.UpdateProductRequest)
-	if err := json.NewDecoder(r.Body).Decode(request); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
-		json.NewEncoder(w).Encode(response)
-		return
-	}
-
+	// userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
+	// userId := int(userInfo["id"].(float64))
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 
-	product, err := h.ProductRepository.GetProduct(int(id))
+	dataContex := r.Context().Value("dataFile") // add this code
+	fmt.Println("ini handle", dataContex)       // add this code
+
+	filename := dataContex.(string)
+
+	price, _ := strconv.Atoi(r.FormValue("price"))
+	qty, _ := strconv.Atoi(r.FormValue("qty"))
+	request := productdto.UpdateProductRequest{
+		Name:  r.FormValue("name"),
+		Price: price,
+		Qty:   qty,
+		// UserID: userId,
+	}
+
+	validation := validator.New()
+	err := validation.Struct(request)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
+		w.WriteHeader(http.StatusInternalServerError)
+		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
 		json.NewEncoder(w).Encode(response)
 		return
 	}
 
-	if request.Name != "" {
-		product.Name = request.Name
+	product, _ := h.ProductRepository.GetProduct(int(id))
+
+	product.Name = request.Name
+	product.Qty = request.Qty
+	product.Price = request.Price
+
+	if filename != "false" {
+		product.Image = filename
 	}
 
-	if request.Price != 0 {
-		product.Price = request.Price
-	}
-
-	if request.Desc != "" {
-		product.Desc = request.Desc
-	}
-
-	if request.Image != "" {
-		product.Image = request.Image
-	}
-
-	// if request.Qty != 0 {
-	// 	product.Qty = request.Qty
-	// }
-
-	data, err := h.ProductRepository.UpdateProduct(product, userId)
+	data, err := h.ProductRepository.UpdateProduct(product, id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
