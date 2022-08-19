@@ -2,6 +2,7 @@ package routes
 
 import (
 	"be-waybucks/handlers"
+	"be-waybucks/pkg/middleware"
 	"be-waybucks/pkg/mysql"
 	"be-waybucks/repositories"
 
@@ -14,6 +15,6 @@ func CartRoutes(r *mux.Router) {
 
 	r.HandleFunc("/carts", h.FindCart).Methods("GET")
 	r.HandleFunc("/cart/{id}", h.GetCart).Methods("GET")
-	r.HandleFunc("/cart", h.CreateCart).Methods("GET")
-	r.HandleFunc("/cart/{id}", h.DeleteCart).Methods("GET")
+	r.HandleFunc("/cart", middleware.Auth(h.CreateCart)).Methods("POST")
+	r.HandleFunc("/cart/{id}", h.DeleteCart).Methods("DELETE")
 }
