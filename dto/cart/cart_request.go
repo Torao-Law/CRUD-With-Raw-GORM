@@ -1,10 +1,9 @@
 package cartdto
 
 type CartRequest struct {
-	ID        int `json:"ID" validate:"required"`
-	UserID    int `gorm:"type: varchar(255)" json:"userID" validate:"required"`
-	ProductID int `gorm:"type: varchar(255)" json:"productID" validate:"required"`
-	TopingID  int `gorm:"type: varchar(255)" json:"topingID" validate:"required"`
-	Qty       int `gorm:"type: varchar(255)" json:"qty" validate:"required"`
-	SubAmount int `gorm:"type: varchar(255)" json:"subAmount" validate:"required"`
+	UserID    int   ` json:"user_id" `
+	ProductID int   ` json:"product_id" `
+	TopingID  []int `json:"toping_id" `
+	Qty       int   ` json:"qty" `
+	SubAmount int   ` json:"sub_amount"`
 }
